@@ -9,12 +9,31 @@ Built with FastAPI + TensorFlow. Runs fully locally — no cloud account needed.
 
 ```
 satellite_classifier/
-├── app/
-│   └── main.py                          # FastAPI application
+│
+├── Neural_Dataset/                      # Training dataset
+│   ├── cloudy/
+│   ├── fire/
+│   ├── floods/
+│   └── normal/
+│
+├── app/                                 # FastAPI app
+│   ├── __pycache__/
+│   │   └── main.cpython-313.pyc
+│   ├── static/                          # Frontend files
+│   │   ├── favicon.ico
+│   │   └── index.html
+│   └── main.py                          # API entry point
+│
 ├── scripts/
-│   ├── export_model.py                  # Verify & package the trained model
-│   └── test_api.py                      # Smoke test for a running API
-├── Satellite_image_classification.ipynb # Updated notebook (local paths)
+│   ├── export_model.py                  # Model export / packaging
+│   └── test_api.py                      # API testing script
+│
+├── Satellite_image_classification.ipynb # Training notebook
+├── best_model.keras                     # Saved model (best)
+├── final_model.keras                    # Final trained model
+├── class_mapping.json                   # Label mapping
+├── satellite_classifierrun.bat          # Run script (Windows)
+│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
