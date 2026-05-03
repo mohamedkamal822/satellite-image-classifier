@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SatVision — Satellite Image Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/favicon.ico">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── THEME TOKENS ─── */
+    :root {
+      --transition-theme: background 0.45s ease, color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #080d14;
+      --bg-grid: rgba(255,255,255,0.025);
+      --surface: #0f1923;
+      --surface2: #162030;
+      --surface3: #1c2b3f;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --border-accent: rgba(96,165,250,0.35);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --text-hint: #4b5e75;
+      --blue: #60a5fa;
+      --blue-glow: rgba(96,165,250,0.18);
+      --blue-deep: #1d4ed8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56,189,248,0.15);
+      --shadow: 0 8px 32px rgba(0,0,0,0.6);
+      --shadow-sm: 0 2px 10px rgba(0,0,0,0.4);
+      --glass: rgba(15,25,35,0.85);
+      --nav-bg: rgba(8,13,20,0.9);
+      --toggle-bg: #1c2b3f;
+      --toggle-knob: #e2e8f0;
+      --star-opacity: 1;
+      --sun-opacity: 0;
+    }
+
+    [data-theme="light"] {
+      --bg: #f0f4f8;
+      --bg-grid: rgba(0,0,0,0.04);
+      --surface: #ffffff;
+      --surface2: #f1f5f9;
+      --surface3: #e2e8f0;
+      --border: rgba(0,0,0,0.08);
+      --border2: rgba(0,0,0,0.14);
+      --border-accent: rgba(37,99,235,0.3);
+      --text: #0f172a;
+      --text-dim: #475569;
+      --text-hint: #94a3b8;
+      --blue: #2563eb;
+      --blue-glow: rgba(37,99,235,0.12);
+      --blue-deep: #1d4ed8;
+      --accent: #0284c7;
+      --accent-glow: rgba(2,132,199,0.1);
+      --shadow: 0 8px 32px rgba(0,0,0,0.12);
+      --shadow-sm: 0 2px 10px rgba(0,0,0,0.07);
+      --glass: rgba(255,255,255,0.9);
+      --nav-bg: rgba(240,244,248,0.92);
+      --toggle-bg: #e2e8f0;
+      --toggle-knob: #0f172a;
+      --star-opacity: 0;
+      --sun-opacity: 1;
+    }
+
+    /* ─── BASE ─── */
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: var(--transition-theme);
+      overflow-x: hidden;
+    }
+
+    /* ─── BACKGROUND GRID ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+      transition: var(--transition-theme);
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition-theme);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Space Mono", monospace;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-brand .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--blue), var(--accent));
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--blue-glow);
+      color: var(--blue);
+      border: 1px solid var(--border-accent);
+      font-family: "Space Mono", monospace;
+    }
+
+    /* ─── THEME TOGGLE ─── */
+    .theme-toggle {
+      position: relative;
+      width: 54px;
+      height: 28px;
+      cursor: pointer;
+      background: var(--toggle-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border2);
+      transition: background 0.4s, border-color 0.4s;
+      flex-shrink: 0;
+      outline: none;
+    }
+    .theme-toggle::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--toggle-knob);
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.4s;
+    }
+    [data-theme="light"] .theme-toggle::before { transform: translateX(26px); }
+
+    .toggle-icons {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
+      pointer-events: none;
+      font-size: 11px;
+    }
+    .icon-moon { opacity: var(--star-opacity); transition: opacity 0.4s; }
+    .icon-sun  { opacity: var(--sun-opacity);  transition: opacity 0.4s; }
+
+    /* ─── WRAPPER ─── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      text-align: center;
+      margin-bottom: 44px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .header-eyebrow {
+      font-family: "Space Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--blue);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .header-eyebrow::before,
+    .header-eyebrow::after {
+      content: '';
+      height: 1px;
+      width: 40px;
+      background: var(--border-accent);
+    }
+    .header h1 {
+      font-family: "Space Mono", monospace;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .header h1 span { color: var(--blue); }
+    .header p {
+      font-size: 15px;
+      color: var(--text-dim);
+      max-width: 480px;
+      margin: 0 auto 20px;
+      line-height: 1.6;
+    }
+
+    .tag-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .tag {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: default;
+    }
+    .tag:hover { transform: translateY(-1px); }
+    .tag-fire   { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.2); }
+    .tag-floods { background: rgba(96,165,250,0.12); color: var(--blue); border-color: var(--border-accent); }
+    .tag-cloudy { background: rgba(100,116,139,0.13); color: var(--tag-cloudy-color); border-color: rgba(100,116,139,0.28); }
+    .tag-normal { background: rgba(52,211,153,0.12); color: #16a34a; border-color: rgba(52,211,153,0.2); }
+    [data-theme="dark"] .tag-cloudy { --tag-cloudy-color: #cbd5e1; }
+    [data-theme="light"] .tag-cloudy { --tag-cloudy-color: #334155; }
+    [data-theme="dark"]  .tag-normal { color: #6ee7b7; border-color: rgba(52,211,153,0.2); }
+    [data-theme="light"] .tag-normal { color: #16a34a; border-color: rgba(22,163,74,0.25); }
+
+    /* ─── UPLOAD ZONE ─── */
+    .upload-zone {
+      border: 1.5px dashed var(--border-accent);
+      border-radius: 16px;
+      padding: 44px 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+      background: var(--blue-glow);
+      position: relative;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .upload-zone:hover, .upload-zone.drag {
+      background: rgba(96,165,250,0.1);
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px var(--blue-glow);
+    }
+    .up-icon { font-size: 40px; margin-bottom: 12px; display: block; animation: orbit 6s linear infinite; }
+    @keyframes orbit {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .up-text { font-size: 15px; color: var(--text-dim); font-weight: 500; }
+    .up-sub { font-size: 12px; color: var(--text-hint); margin-top: 6px; font-family: "Space Mono", monospace; }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    /* ─── STATS BAR ─── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s 0.15s ease both;
+    }
+    .stat-pill {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: var(--transition-theme);
+    }
+    .stat-pill .stat-icon { font-size: 18px; }
+    .stat-pill .stat-body {}
+    .stat-pill .stat-val {
+      font-family: "Space Mono", monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-pill .stat-lbl { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+
+    /* ─── TWO-COL ─── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      display: none;
+      animation: fadeUp 0.5s ease both;
+    }
+    @media (max-width: 620px) { .two-col { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: var(--transition-theme);
+    }
+
+    .section-label {
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-hint);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 14px;
+    }
+
+    /* ─── PREVIEW ─── */
+    .preview-wrap { position: relative; }
+    .preview-box {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface2);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      transition: var(--transition-theme);
+    }
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      transition: opacity 0.4s;
+    }
+    .preview-placeholder { color: var(--text-hint); font-size: 13px; text-align: center; }
+
+    /* Image controls overlay */
+    .img-controls {
+      display: none;
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      gap: 6px;
+    }
+    .preview-wrap:hover .img-controls,
+    .img-controls.active { display: flex; }
+    .img-ctrl-btn {
+      width: 30px; height: 30px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: background 0.15s, transform 0.15s;
+      color: var(--text);
+    }
+    .img-ctrl-btn:hover { background: var(--surface3); transform: scale(1.1); }
+
+    /* Zoom overlay */
+    .zoom-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+      animation: fadeIn 0.25s ease;
+    }
+    .zoom-overlay.open { display: flex; }
+    .zoom-overlay img { max-width: 90vw; max-height: 90vh; border-radius: 12px; object-fit: contain; }
+    .zoom-close {
+      position: absolute;
+      top: 20px; right: 20px;
+      width: 36px; height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+    .zoom-close:hover { background: var(--surface3); }
+
+    /* ─── SPINNER ─── */
+    .spinner-wrap { display: none; text-align: center; padding: 40px 0; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    .spinner-text { font-size: 13px; color: var(--text-hint); font-family: "Space Mono", monospace; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── RESULT BADGE ─── */
+    .pred-badge {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-weight: 600; font-size: 15px;
+      border: 1px solid transparent;
+      animation: fadeUp 0.4s ease both;
+    }
+    .pred-badge .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.3); } }
+    .pred-badge .conf-inline { margin-left: auto; font-size: 12px; font-weight: 400; opacity: 0.75; font-family: "Space Mono", monospace; }
+
+    .pred-fire   { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+    .pred-fire   .dot { background: #ef4444; }
+    .pred-floods { background: rgba(96,165,250,0.1); color: #93c5fd; border-color: rgba(96,165,250,0.2); }
+    .pred-floods .dot { background: #60a5fa; }
+    .pred-cloudy { background: rgba(148,163,184,0.1); color: #cbd5e1; border-color: rgba(148,163,184,0.2); }
+    .pred-cloudy .dot { background: #94a3b8; }
+    .pred-normal { background: rgba(52,211,153,0.1); color: #6ee7b7; border-color: rgba(52,211,153,0.2); }
+    .pred-normal .dot { background: #34d399; }
+
+    .pred-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.65; border-left: 2px solid var(--border2); padding-left: 12px; }
+
+    /* ─── PROBABILITY BARS ─── */
+    .bar-row { margin-bottom: 12px; }
+    .bar-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+    .bar-header span:last-child { font-weight: 600; color: var(--text); font-family: "Space Mono", monospace; }
+    .bar-track { height: 6px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; width: 0%; transition: width 0.7s cubic-bezier(0.22,1,0.36,1); }
+    .fill-fire   { background: linear-gradient(90deg, #dc2626, #f87171); }
+    .fill-floods { background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
+    .fill-cloudy { background: linear-gradient(90deg, #475569, #94a3b8); }
+    .fill-normal { background: linear-gradient(90deg, #059669, #34d399); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    /* ─── META GRID ─── */
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .meta-card {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      transition: var(--transition-theme);
+    }
+    .meta-card .ml { font-size: 10px; color: var(--text-hint); margin-bottom: 3px; font-family: "Space Mono", monospace; text-transform: uppercase; letter-spacing: 0.07em; }
+    .meta-card .mv { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ─── CLEAR HISTORY PILL ─── */
+    .stat-pill-clear {
+      cursor: pointer;
+      flex: 0 0 auto;
+      transition: var(--transition-theme), color 0.2s, background 0.2s, border-color 0.2s;
+    }
+    .stat-pill-clear:hover {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(239,68,68,0.3);
+      color: #f87171;
+    }
+    .stat-pill-clear:hover .stat-val,
+    .stat-pill-clear:hover .stat-lbl,
+    .stat-pill-clear:hover .stat-icon { color: #f87171; }
+
+    /* ─── PREVIEW HOVER OVERLAY ─── */
+    .preview-box {
+      cursor: pointer;
+    }
+    .preview-hover-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 2;
+    }
+    .preview-box:hover .preview-hover-overlay {
+      opacity: 1;
+    }
+    .preview-box:hover img {
+      filter: brightness(0.55);
+      transition: filter 0.25s ease, opacity 0.4s;
+    }
+    .preview-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      transform: scale(0.85);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .preview-box:hover .preview-circle {
+      transform: scale(1);
+    }
+    .preview-plus {
+      color: rgba(255,255,255,0.95);
+      font-size: 32px;
+      font-weight: 300;
+      line-height: 1;
+      margin-top: -2px;
+      user-select: none;
+    }
+
+    /* ─── CLEAR HISTORY BTN ─── */
+    .clear-history-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-size: 12px;
+      font-family: "DM Sans", sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      box-shadow: var(--shadow-sm);
+      transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .clear-history-btn:hover {
+      color: #f87171;
+      background: rgba(239,68,68,0.07);
+      border-color: rgba(239,68,68,0.3);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+      transform: translateY(-1px);
+    }
+    .clear-history-btn:active { transform: translateY(0); }
+
+    /* ─── EXPORT BUTTON ─── */
+    .export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 9px;
+      margin-top: 14px;
+      background: var(--blue-glow);
+      border: 1px solid var(--border-accent);
+      border-radius: 8px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: "DM Sans", sans-serif;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .export-btn:hover { background: rgba(96,165,250,0.18); transform: translateY(-1px); }
+    .export-btn:active { transform: translateY(0); }
+
+    /* ─── HISTORY ─── */
+    .history-section { margin-top: 20px; }
+    .history-title {
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-hint);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 10px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .history-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      font-size: 13px;
+    }
+    .history-item:hover { background: var(--surface3); border-color: var(--border2); transform: translateX(2px); }
+    .history-thumb { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
+    .history-info { flex: 1; min-width: 0; }
+    .history-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; font-weight: 500; }
+    .history-sub  { color: var(--text-hint); font-size: 11px; margin-top: 2px; font-family: "Space Mono", monospace; }
+    .history-badge { font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 500; flex-shrink: 0; border: 1px solid transparent; }
+
+    /* ─── CLEAR HISTORY ─── */
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .clear-btn {
+      font-size: 11px;
+      color: var(--text-hint);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: "DM Sans", sans-serif;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .clear-btn:hover { color: #f87171; background: rgba(239,68,68,0.08); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state { text-align: center; padding: 36px 16px; color: var(--text-hint); font-size: 13px; line-height: 1.7; }
+    .empty-state .empty-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.5; }
+
+    /* ─── ERROR ─── */
+    .error-msg {
+      color: #f87171;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.15);
+      border-radius: 10px;
+    }
+    .error-msg code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: "Space Mono", monospace; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      z-index: 999;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── FOOTER ─── */
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-hint);
+      margin-top: 36px;
+      animation: fadeUp 0.6s 0.3s ease both;
+      font-family: "Space Mono", monospace;
+    }
+    .footer-note code {
+      background: var(--surface);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="brand-icon">🛰️</div>
+    SatVision
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">v2.0</span>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle day/night mode">
+      <div class="toggle-icons">
+        <span class="icon-moon">🌙</span>
+        <span class="icon-sun">☀️</span>
+      </div>
+    </button>
+  </div>
+</nav>
+
+<!-- ZOOM OVERLAY -->
+<div class="zoom-overlay" id="zoomOverlay">
+  <button class="zoom-close" id="zoomClose">✕</button>
+  <img id="zoomImg" src="" alt="">
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">AI-Powered Remote Sensing</div>
+    <h1>Satellite Image<br><span>Classifier</span></h1>
+    <p>Upload satellite imagery to detect environmental conditions using computer vision AI</p>
+    <div class="tag-row">
+      <span class="tag tag-fire">🔥 Wildfire</span>
+      <span class="tag tag-floods">💧 Floods</span>
+      <span class="tag tag-cloudy">☁️ Cloud Cover</span>
+      <span class="tag tag-normal">🌿 Normal</span>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-pill">
+      <span class="stat-icon">📊</span>
+      <div class="stat-body">
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-lbl">Classified</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-icon">🎯</span>
+      <div class="stat-body">
+        <div class="stat-val" id="statAvgConf">—</div>
+        <div class="stat-lbl">Avg Confidence</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-icon">⚡</span>
+      <div class="stat-body">
+        <div class="stat-val" id="statTopClass">—</div>
+        <div class="stat-lbl">Top Class</div>
+      </div>
+    </div>
+    <div class="stat-pill stat-pill-clear" id="clearHistoryMain" onclick="doClearHistory()" title="Clear session history">
+      <span class="stat-icon">🗑️</span>
+      <div class="stat-body">
+        <div class="stat-val" style="font-size:13px;">Clear</div>
+        <div class="stat-lbl">History</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD ZONE -->
+  <div class="upload-zone" id="uploadZone">
+    <span class="up-icon">🛰️</span>
+    <div class="up-text">Drop a satellite image here, or click to browse</div>
+    <div class="up-sub">JPG · PNG · WEBP · max 10 MB</div>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="two-col" id="mainContent">
+
+    <!-- LEFT: Preview + History -->
+    <div class="card">
+      <div class="section-label">Image preview</div>
+      <div class="preview-wrap">
+        <div class="preview-box" id="previewBox" onclick="fileInput.click()">
+          <img id="preview" alt="Uploaded satellite image">
+          <div class="preview-placeholder" id="previewPlaceholder">
+            <div style="font-size:28px;margin-bottom:8px;opacity:0.3;">🛰️</div>
+            No image loaded
+          </div>
+          <div class="preview-hover-overlay">
+            <div class="preview-circle">
+              <span class="preview-plus">+</span>
+            </div>
+          </div>
+        </div>
+        <div class="img-controls" id="imgControls">
+          <button class="img-ctrl-btn" id="zoomBtn" title="Zoom">🔍</button>
+          <button class="img-ctrl-btn" id="downloadBtn" title="Download">⬇️</button>
+        </div>
+      </div>
+
+      <div class="history-section" id="historySection" style="display:none;">
+        <div class="history-header">
+          <div class="history-title">Recent classifications</div>
+          <button class="clear-btn" id="clearHistory">Clear</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="card">
+      <div class="section-label">Classification results</div>
+      <div class="spinner-wrap" id="spinnerWrap">
+        <div class="spinner"></div>
+        <div class="spinner-text">Analyzing imagery…</div>
+      </div>
+      <div id="resultsContent">
+        <div class="empty-state">
+          <div class="empty-icon">📡</div>
+          Upload an image to see predictions
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    Connects to <code>/predict</code> · Returns <code>predicted_class</code>, <code>confidence</code>, <code>all_probabilities</code>
+  </div>
+</div>
+
+<script>
+  /* ─── THEME TOGGLE ─── */
+  const html = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('satvision-theme') || 'dark';
+  html.setAttribute('data-theme', savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('satvision-theme', next);
+  });
+
+  /* ─── ELEMENTS ─── */
+  const uploadZone   = document.getElementById('uploadZone');
+  const fileInput    = document.getElementById('fileInput');
+  const mainContent  = document.getElementById('mainContent');
+  const preview      = document.getElementById('preview');
+  const previewPlaceholder = document.getElementById('previewPlaceholder');
+  const spinnerWrap  = document.getElementById('spinnerWrap');
+  const resultsContent = document.getElementById('resultsContent');
+  const historySection = document.getElementById('historySection');
+  const historyList  = document.getElementById('historyList');
+  const imgControls  = document.getElementById('imgControls');
+  const zoomOverlay  = document.getElementById('zoomOverlay');
+  const zoomImg      = document.getElementById('zoomImg');
+  const zoomBtn      = document.getElementById('zoomBtn');
+  const downloadBtn  = document.getElementById('downloadBtn');
+  const zoomClose    = document.getElementById('zoomClose');
+  const toast        = document.getElementById('toast');
+  const clearHistory = document.getElementById('clearHistory');
+
+  /* ─── STATE ─── */
+  let classHistory = JSON.parse(localStorage.getItem('satvision-history') || '[]');
+  let allClassifications = JSON.parse(localStorage.getItem('satvision-stats') || '[]');
+  let currentThumbUrl = null;
+
+  /* ─── MAPS ─── */
+  const colorMap = {
+    fire:   { badge: 'pred-fire',   fill: 'fill-fire',   tagClass: 'tag-fire',   histBadge: 'rgba(239,68,68,0.12)', histColor: '#f87171' },
+    floods: { badge: 'pred-floods', fill: 'fill-floods', tagClass: 'tag-floods', histBadge: 'rgba(96,165,250,0.12)', histColor: '#93c5fd' },
+    cloudy: { badge: 'pred-cloudy', fill: 'fill-cloudy', tagClass: 'tag-cloudy', histBadge: 'rgba(148,163,184,0.12)', histColor: '#cbd5e1' },
+    normal: { badge: 'pred-normal', fill: 'fill-normal', tagClass: 'tag-normal', histBadge: 'rgba(52,211,153,0.12)', histColor: '#6ee7b7' },
+  };
+
+  const descMap = {
+    fire:   'Active wildfire or burn scar detected. High thermal signature visible in the imagery. Immediate assessment is recommended.',
+    floods: 'Standing water or flood extent detected. Review drainage patterns and affected areas for emergency response planning.',
+    cloudy: 'Dense cloud coverage present. Optical analysis reliability may be reduced. Consider multi-spectral or SAR data.',
+    normal: 'No anomalies detected. Vegetation cover and land use appear stable within normal thresholds.',
+  };
+
+  const emojiMap = { fire: '🔥', floods: '💧', cloudy: '☁️', normal: '🌿' };
+
+  /* ─── DRAG & DROP ─── */
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag');
+    if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; handleFile(); }
+  });
+  fileInput.addEventListener('change', handleFile);
+
+  /* ─── PASTE TO UPLOAD ─── */
+  document.addEventListener('paste', e => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        handleFile();
+        showToast('📋 Image pasted!');
+        break;
+      }
+    }
+  });
+
+  /* ─── KEYBOARD SHORTCUT ─── */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeZoom();
+    if ((e.key === 'u' || e.key === 'U') && !e.metaKey) fileInput.click();
+  });
+
+  /* ─── ZOOM ─── */
+  zoomBtn.addEventListener('click', () => {
+    if (!currentThumbUrl) return;
+    zoomImg.src = currentThumbUrl;
+    zoomOverlay.classList.add('open');
+  });
+  zoomClose.addEventListener('click', closeZoom);
+  zoomOverlay.addEventListener('click', e => { if (e.target === zoomOverlay) closeZoom(); });
+  function closeZoom() { zoomOverlay.classList.remove('open'); }
+
+  /* ─── DOWNLOAD ─── */
+  downloadBtn.addEventListener('click', () => {
+    if (!currentThumbUrl) return;
+    const a = document.createElement('a');
+    a.href = currentThumbUrl;
+    a.download = 'satellite-image.jpg';
+    a.click();
+    showToast('⬇️ Image downloaded');
+  });
+
+  /* ─── CLEAR HISTORY ─── */
+  function doClearHistory() {
+    classHistory = [];
+    allClassifications = [];
+    localStorage.removeItem('satvision-history');
+    localStorage.removeItem('satvision-stats');
+    historySection.style.display = 'none';
+    historyList.innerHTML = '';
+    mainContent.style.display = 'none';
+    preview.style.display = 'none';
+    previewPlaceholder.style.display = 'block';
+    imgControls.classList.remove('active');
+    currentThumbUrl = null;
+    resultsContent.innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div>Upload an image to see predictions</div>`;
+    spinnerWrap.style.display = 'none';
+    window._lastResult = null;
+    updateStats();
+    showToast('🗑️ History cleared');
+  }
+
+  clearHistory.addEventListener('click', doClearHistory);
+
+  /* ─── TOAST ─── */
+  let toastTimeout;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  /* ─── STATS ─── */
+  function updateStats() {
+    document.getElementById('statTotal').textContent = allClassifications.length;
+    if (allClassifications.length === 0) {
+      document.getElementById('statAvgConf').textContent = '—';
+      document.getElementById('statTopClass').textContent = '—';
+      return;
+    }
+    const avg = allClassifications.reduce((s, c) => s + c.conf, 0) / allClassifications.length;
+    document.getElementById('statAvgConf').textContent = (avg * 100).toFixed(0) + '%';
+
+    const freq = {};
+    allClassifications.forEach(c => freq[c.cls] = (freq[c.cls] || 0) + 1);
+    const top = Object.entries(freq).sort((a,b) => b[1]-a[1])[0];
+    const e = emojiMap[top[0]] || '';
+    document.getElementById('statTopClass').textContent = e + ' ' + top[0].charAt(0).toUpperCase() + top[0].slice(1);
+  }
+  // Clear history on every page load
+  classHistory = [];
+  allClassifications = [];
+  localStorage.removeItem('satvision-history');
+  localStorage.removeItem('satvision-stats');
+  updateStats();
+
+  /* ─── HANDLE FILE ─── */
+  async function handleFile() {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    mainContent.style.display = 'grid';
+    const objUrl = URL.createObjectURL(file);
+    currentThumbUrl = objUrl;
+    preview.src = objUrl;
+    preview.style.display = 'block';
+    previewPlaceholder.style.display = 'none';
+    imgControls.classList.add('active');
+
+    spinnerWrap.style.display = 'block';
+    resultsContent.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const startTime = Date.now();
+
+    try {
+      const res = await fetch('/predict', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      showResults(data, file.name, objUrl, file.size, elapsed);
+    } catch (err) {
+      spinnerWrap.style.display = 'none';
+      resultsContent.innerHTML = `<div class="error-msg">
+        ⚠️ Could not reach <code>/predict</code>.<br>
+        Make sure your backend is running.<br><br>
+        <small style="color:var(--text-hint);">${err.message}</small>
+      </div>`;
+    }
+  }
+
+  /* ─── SHOW RESULTS ─── */
+  function showResults(data, filename, thumbUrl, fileSize, elapsed) {
+    spinnerWrap.style.display = 'none';
+
+    const cls   = (data.predicted_class || 'normal').toLowerCase();
+    const conf  = data.confidence || 0;
+    const probs = data.all_probabilities || {};
+    const col   = colorMap[cls] || colorMap.normal;
+    const desc  = descMap[cls] || '';
+    const ts    = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const sizeKb = fileSize ? (fileSize / 1024).toFixed(0) + ' KB' : '—';
+
+    const probBars = Object.entries(probs).map(([k, v]) => {
+      const c = colorMap[k] || colorMap.normal;
+      return `
+        <div class="bar-row">
+          <div class="bar-header">
+            <span>${emojiMap[k] || ''} ${k.charAt(0).toUpperCase() + k.slice(1)}</span>
+            <span>${(v * 100).toFixed(1)}%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill ${c.fill}" id="bar-${k}" style="width:0%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const elapsedHtml = elapsed ? `<div class="meta-card"><div class="ml">Latency</div><div class="mv">${elapsed}s</div></div>` : '';
+
+    resultsContent.innerHTML = `
+      <div class="pred-badge ${col.badge}">
+        <div class="dot"></div>
+        <span>${emojiMap[cls] || ''} ${cls.charAt(0).toUpperCase() + cls.slice(1)}</span>
+        <span class="conf-inline">${(conf * 100).toFixed(1)}% conf.</span>
+      </div>
+
+      <p class="pred-desc">${desc}</p>
+
+      <div class="section-label">Class probabilities</div>
+      ${probBars || '<div style="color:var(--text-hint);font-size:13px;">No probability data from server.</div>'}
+
+      <hr>
+      <div class="section-label">Metadata</div>
+      <div class="meta-grid">
+        <div class="meta-card"><div class="ml">File</div><div class="mv" title="${filename}">${filename}</div></div>
+        <div class="meta-card"><div class="ml">Time</div><div class="mv">${ts}</div></div>
+        <div class="meta-card"><div class="ml">Size</div><div class="mv">${sizeKb}</div></div>
+        <div class="meta-card"><div class="ml">Confidence</div><div class="mv">${(conf * 100).toFixed(1)}%</div></div>
+        ${elapsedHtml}
+      </div>
+
+      <button class="export-btn" onclick="exportJSON()">📤 Export result as JSON</button>
+    `;
+
+    // Animate bars
+    requestAnimationFrame(() => {
+      Object.entries(probs).forEach(([k, v]) => {
+        const el = document.getElementById('bar-' + k);
+        if (el) el.style.width = (v * 100).toFixed(1) + '%';
+      });
+    });
+
+    window._lastResult = { cls, conf, probs, filename, ts, sizeKb, elapsed };
+    addHistory(cls, filename, thumbUrl, conf, ts, probs);
+    showToast(`✅ Classified as ${emojiMap[cls]} ${cls}`);
+  }
+
+  /* ─── EXPORT JSON ─── */
+  function exportJSON() {
+    if (!window._lastResult) return;
+    const blob = new Blob([JSON.stringify(window._lastResult, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'classification-result.json';
+    a.click();
+    showToast('📤 JSON exported!');
+  }
+
+  /* ─── HISTORY ─── */
+  function addHistory(cls, filename, thumbUrl, conf, ts, probs) {
+    classHistory = classHistory.filter(h => h.filename !== filename);
+    classHistory.unshift({ cls, filename, thumbUrl, conf, ts, probs });
+    if (classHistory.length > 6) classHistory.pop();
+
+    allClassifications.push({ cls, conf });
+    if (allClassifications.length > 100) allClassifications.shift();
+
+    try {
+      localStorage.setItem('satvision-history', JSON.stringify(classHistory.map(h => ({ ...h, thumbUrl: null }))));
+      localStorage.setItem('satvision-stats', JSON.stringify(allClassifications));
+    } catch(e) {}
+
+    updateStats();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (classHistory.length < 1) return;
+    historySection.style.display = 'block';
+    historyList.innerHTML = classHistory.map((h, i) => {
+      const col = colorMap[h.cls] || colorMap.normal;
+      return `
+        <div class="history-item" onclick="restoreHistory(${i})">
+          ${h.thumbUrl
+            ? `<img class="history-thumb" src="${h.thumbUrl}" alt="">`
+            : `<div class="history-thumb" style="background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:16px;">${emojiMap[h.cls]||'?'}</div>`
+          }
+          <div class="history-info">
+            <div class="history-name">${h.filename}</div>
+            <div class="history-sub">${h.ts} · ${(h.conf * 100).toFixed(0)}%</div>
+          </div>
+          <span class="history-badge" style="background:${col.histBadge};color:${col.histColor};border-color:${col.histColor}33;">
+            ${emojiMap[h.cls] || ''} ${h.cls.charAt(0).toUpperCase() + h.cls.slice(1)}
+          </span>
+        </div>`;
+    }).join('');
+  }
+
+  function restoreHistory(i) {
+    const h = classHistory[i];
+    if (!h) return;
+    if (h.thumbUrl) {
+      preview.src = h.thumbUrl;
+      preview.style.display = 'block';
+      previewPlaceholder.style.display = 'none';
+      imgControls.classList.add('active');
+      currentThumbUrl = h.thumbUrl;
+    }
+    mainContent.style.display = 'grid';
+    spinnerWrap.style.display = 'none';
+
+    const cls  = h.cls;
+    const conf = h.conf;
+    const probs = h.probs || {};
+    const col  = colorMap[cls] || colorMap.normal;
+    const desc = descMap[cls] || '';
+
+    const probBars = Object.entries(probs).map(([k, v]) => {
+      const c = colorMap[k] || colorMap.normal;
+      return `<div class="bar-row">
+        <div class="bar-header">
+          <span>${emojiMap[k]||''} ${k.charAt(0).toUpperCase() + k.slice(1)}</span>
+          <span>${(v * 100).toFixed(1)}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ${c.fill}" id="bar-${k}" style="width:0%"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    resultsContent.innerHTML = `
+      <div class="pred-badge ${col.badge}">
+        <div class="dot"></div>
+        <span>${emojiMap[cls]||''} ${cls.charAt(0).toUpperCase() + cls.slice(1)}</span>
+        <span class="conf-inline">${(conf * 100).toFixed(1)}% conf.</span>
+      </div>
+      <p class="pred-desc">${desc}</p>
+      <div class="section-label">Class probabilities</div>
+      ${probBars || '<div style="color:var(--text-hint);font-size:13px;">No probability data.</div>'}
+      <hr>
+      <div class="section-label">Metadata</div>
+      <div class="meta-grid">
+        <div class="meta-card"><div class="ml">File</div><div class="mv" title="${h.filename}">${h.filename}</div></div>
+        <div class="meta-card"><div class="ml">Time</div><div class="mv">${h.ts}</div></div>
+        <div class="meta-card"><div class="ml">Top class</div><div class="mv">${emojiMap[cls]||''} ${cls.charAt(0).toUpperCase() + cls.slice(1)}</div></div>
+        <div class="meta-card"><div class="ml">Confidence</div><div class="mv">${(conf * 100).toFixed(1)}%</div></div>
+      </div>
+      <button class="export-btn" onclick="exportJSON()">📤 Export result as JSON</button>
+    `;
+
+    window._lastResult = { cls, conf, probs, filename: h.filename, ts: h.ts };
+    requestAnimationFrame(() => {
+      Object.entries(probs).forEach(([k, v]) => {
+        const el = document.getElementById('bar-' + k);
+        if (el) el.style.width = (v * 100).toFixed(1) + '%';
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

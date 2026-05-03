@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT — Satellite Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="/static/favicon.ico">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03070f;
+  --panel:#080f1e;
+  --panel2:#0c1526;
+  --panel3:#101d32;
+  --cyan:#00d4ff;
+  --green:#00ff88;
+  --red:#ff3355;
+  --amber:#ffaa00;
+  --text:#c8e6ff;
+  --text2:#7ba8d4;
+  --text3:#3d6a96;
+  --border:rgba(0,212,255,0.08);
+  --border2:rgba(0,212,255,0.18);
+  --border3:rgba(0,212,255,0.35);
+  --r:12px;--r-sm:8px;
+  --mono:'JetBrains Mono',monospace;
+  --display:'Orbitron',sans-serif;
+  --body:'Inter',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none}
+#starfield{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,212,255,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(168,85,247,0.04) 0%,transparent 60%),radial-gradient(ellipse at 60% 80%,rgba(0,255,136,0.03) 0%,transparent 50%),var(--bg)}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;height:56px;background:rgba(3,7,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 24px;gap:0;box-shadow:0 1px 0 rgba(0,212,255,0.05),0 4px 24px rgba(0,0,0,0.5)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-mark{width:32px;height:32px;border:1.5px solid var(--cyan);border-radius:6px;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 12px rgba(0,212,255,0.3),inset 0 0 12px rgba(0,212,255,0.05)}
+.nav-logo-mark::after{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.nav-logo-text{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.2em;color:var(--text)}
+.nav-logo-sub{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase}
+.nav-div{width:1px;height:28px;background:var(--border2);margin:0 20px}
+.nav-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text3)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 1.5s ease-in-out infinite}
+.nav-space{flex:1}
+.nav-pill{display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--panel2);border:1px solid var(--border2);border-radius:999px;font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:8px}
+.nav-pill strong{color:var(--text);font-size:11px}
+.nav-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;background:transparent;border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;transition:.2s;margin-left:8px}
+.nav-btn:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.15)}
+
+/* WRAP */
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 24px 80px}
+
+/* HERO */
+.hero{display:grid;grid-template-columns:1fr auto;align-items:center;gap:24px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.hero-title{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.05em;line-height:1.2;color:var(--text);margin-bottom:8px}
+.hero-desc{font-size:13px;color:var(--text2);line-height:1.6;max-width:460px}
+.hero-tags{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.ctag{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-sm);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.05em;border:1px solid;transition:.2s;cursor:default}
+.ctag:hover{transform:translateX(-4px)}
+.ctag-fire{border-color:rgba(255,51,85,.3);color:#ff6680;background:rgba(255,51,85,.06)}
+.ctag-flood{border-color:rgba(0,212,255,.3);color:var(--cyan);background:rgba(0,212,255,.06)}
+.ctag-cloudy{border-color:rgba(100,120,160,.3);color:#8aa0c0;background:rgba(100,120,160,.06)}
+.ctag-normal{border-color:rgba(0,255,136,.3);color:var(--green);background:rgba(0,255,136,.06)}
+.ctag-dot{width:5px;height:5px;border-radius:50%}
+.ctag-fire .ctag-dot{background:#ff3355;box-shadow:0 0 6px #ff3355}
+.ctag-flood .ctag-dot{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.ctag-cloudy .ctag-dot{background:#8aa0c0}
+.ctag-normal .ctag-dot{background:var(--green);box-shadow:0 0 6px var(--green)}
+
+/* ALERT */
+.alert{display:none;border-radius:var(--r);padding:14px 20px;margin-bottom:20px;align-items:center;gap:14px;animation:slideDown .3s ease;position:relative;overflow:hidden}
+.alert::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.alert-fire{background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.25)}.alert-fire::before{background:#ff3355;box-shadow:0 0 10px #ff3355}
+.alert-flood{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25)}.alert-flood::before{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.alert-icon{font-size:22px}
+.alert-body strong{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
+.alert-body span{font-size:11px;color:var(--text2)}
+.alert-close{margin-left:auto;width:24px;height:24px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+.alert-close:hover{color:var(--text)}
+
+/* STATS */
+.stats-row{display:none;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:.2s}
+.stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:.3s}
+.stat-box:hover{border-color:var(--border2)}.stat-box:hover::before{opacity:1}
+.stat-val{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.stat-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase}
+.stat-icon{position:absolute;right:14px;top:14px;font-size:16px;opacity:.3}
+
+/* DROPZONE */
+.dz{position:relative;border:1px solid var(--border2);border-radius:var(--r);background:var(--panel);overflow:hidden;cursor:pointer;transition:.25s;margin-bottom:20px}
+.dz:hover,.dz.drag{border-color:var(--cyan);background:rgba(0,212,255,.04);box-shadow:0 0 40px rgba(0,212,255,.08),inset 0 0 40px rgba(0,212,255,.03)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-corner{position:absolute;width:20px;height:20px}
+.dz-corner::before,.dz-corner::after{content:'';position:absolute;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.dz-corner::before{width:100%;height:1.5px;top:0;left:0}
+.dz-corner::after{width:1.5px;height:100%;top:0;left:0}
+.dz-tl{top:10px;left:10px}.dz-tr{top:10px;right:10px;transform:scaleX(-1)}.dz-bl{bottom:10px;left:10px;transform:scaleY(-1)}.dz-br{bottom:10px;right:10px;transform:scale(-1)}
+.dz-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;pointer-events:none}
+.dz-ring{width:72px;height:72px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;margin-bottom:20px;position:relative}
+.dz-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px dashed rgba(0,212,255,.15);animation:rotateSlow 12s linear infinite}
+@keyframes rotateSlow{to{transform:rotate(360deg)}}
+.dz-ring-icon{font-size:28px}
+.dz-title{font-size:15px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.dz-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:12px}
+.dz-kbd{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text3)}
+.dz-kbd kbd{background:var(--panel2);border:1px solid var(--border2);padding:2px 8px;border-radius:4px;font-size:9px;color:var(--text2)}
+
+/* MAIN GRID */
+.main-grid{display:none;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.main-grid{grid-template-columns:1fr}}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.panel-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)}
+.phdr-dots{display:flex;gap:5px}
+.phdr-dot{width:7px;height:7px;border-radius:50%;background:var(--border2)}
+.phdr-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-left:4px}
+.phdr-accent{color:var(--cyan)}
+.panel-body{padding:16px;flex:1;display:flex;flex-direction:column}
+
+/* PREVIEW */
+.prev-area{width:100%;aspect-ratio:1;border-radius:var(--r-sm);background:var(--panel2);border:1px solid var(--border);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.prev-area img{width:100%;height:100%;object-fit:cover;display:none;cursor:zoom-in;transition:transform .3s}
+.prev-area img.on{display:block}
+.prev-area img:hover{transform:scale(1.02)}
+.prev-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text3);font-size:12px;font-family:var(--mono)}
+.prev-ph svg{opacity:.2}
+.prev-ov{position:absolute;bottom:0;left:0;right:0;display:none;background:linear-gradient(transparent,rgba(3,7,15,.9));padding:24px 10px 10px;flex-direction:row;gap:6px;justify-content:flex-end}
+.prev-ov.on{display:flex}
+.pov-btn{width:28px;height:28px;border-radius:5px;background:rgba(3,7,15,.8);backdrop-filter:blur(8px);border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.pov-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* HISTORY */
+.hist-wrap{margin-top:14px;display:none}
+.sec-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);background:var(--panel2);border:1px solid var(--border);cursor:pointer;transition:.15s}
+.hist-item:hover{border-color:var(--border2);background:var(--panel3)}
+.hist-thumb{width:32px;height:32px;border-radius:5px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.hist-info{flex:1;min-width:0}
+.hist-name{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px}
+.hist-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:3px 9px;border-radius:999px;flex-shrink:0;border:1px solid}
+
+/* SPINNER */
+.spin-area{display:none;flex-direction:column;align-items:center;justify-content:center;padding:48px 0;gap:16px}
+.spin-ring{width:48px;height:48px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--cyan);animation:spin .7s linear infinite;box-shadow:0 0 16px rgba(0,212,255,.2)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.1em;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* RESULT BADGE */
+.rb{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--r-sm);margin-bottom:14px;border:1px solid;position:relative;overflow:hidden;animation:popIn .35s cubic-bezier(.34,1.56,.64,1)}
+.rb::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,currentColor 0%,transparent 100%);opacity:.04}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.rb-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rb-label{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.05em}
+.rb-conf{margin-left:auto;font-family:var(--mono);font-size:11px;opacity:.7}
+.rb-fire{border-color:rgba(255,51,85,.3);color:#ff6680}.rb-fire .rb-dot{background:#ff3355;box-shadow:0 0 10px #ff3355}
+.rb-floods{border-color:rgba(0,212,255,.3);color:var(--cyan)}.rb-floods .rb-dot{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.rb-cloudy{border-color:rgba(100,120,160,.3);color:#8aa0c0}.rb-cloudy .rb-dot{background:#8aa0c0}
+.rb-normal{border-color:rgba(0,255,136,.3);color:var(--green)}.rb-normal .rb-dot{background:var(--green);box-shadow:0 0 10px var(--green)}
+
+.res-desc{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:16px;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:var(--r-sm);border-left:2px solid var(--border2)}
+
+/* GAUGE */
+.gauge-wrap{margin-bottom:16px}
+.gauge-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
+.gauge-name{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.gauge-num{font-family:var(--display);font-size:24px;font-weight:700;line-height:1}
+.gauge-track{height:4px;background:var(--panel2);border-radius:2px;overflow:visible;position:relative}
+.gauge-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1);position:relative}
+.gauge-fill::after{content:'';position:absolute;right:-1px;top:-3px;bottom:-3px;width:3px;border-radius:2px;background:inherit;filter:brightness(2);box-shadow:0 0 8px currentColor}
+.gauge-ticks{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--mono);font-size:8px;color:var(--text3)}
+
+/* BARS */
+.bars-wrap{margin-bottom:14px}
+.bar-row{margin-bottom:9px}
+.bar-head{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.04em}
+.bar-head span:last-child{color:var(--text);font-weight:500}
+.bar-track{height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .65s cubic-bezier(.4,0,.2,1)}
+.bf-fire{background:linear-gradient(90deg,#7f0020,#ff3355)}
+.bf-floods{background:linear-gradient(90deg,#003d7f,var(--cyan))}
+.bf-cloudy{background:linear-gradient(90deg,#2a3a50,#8aa0c0)}
+.bf-normal{background:linear-gradient(90deg,#006630,var(--green))}
+
+/* META */
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.meta-cell{background:var(--panel2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;transition:.2s}
+.meta-cell:hover{border-color:var(--border2)}
+.mc-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.mc-val{font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ACTIONS */
+.act-row{display:flex;gap:7px;flex-wrap:wrap}
+.act-btn{flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;height:34px;padding:0 12px;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:.2s}
+.act-btn:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,.1)}
+.act-btn.primary{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.3);color:var(--cyan)}
+.act-btn.primary:hover{background:rgba(0,212,255,.14)}
+
+/* DIVIDER */
+.hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 0;color:var(--text3);text-align:center}
+.empty-icon{font-size:32px;opacity:.25;margin-bottom:4px}
+.empty-t{font-family:var(--mono);font-size:11px;letter-spacing:.1em}
+.empty-s{font-size:12px;max-width:200px;line-height:1.5}
+
+/* ERROR */
+.err{border-radius:var(--r-sm);padding:20px;background:rgba(255,51,85,.05);border:1px solid rgba(255,51,85,.2);text-align:center;color:#ff6680;font-size:13px}
+.err code{background:var(--panel2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:10px}
+
+/* LIGHTBOX */
+.lb{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center}
+.lb.on{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lb img{max-width:90vw;max-height:88vh;border-radius:var(--r);border:1px solid var(--border2);object-fit:contain}
+.lb-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:6px;background:var(--panel);border:1px solid var(--border2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.lb-close:hover{color:var(--text);border-color:var(--border3)}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:400;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-sm);font-family:var(--mono);font-size:11px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.6);animation:toastIn .25s ease;pointer-events:all}
+@keyframes toastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+/* FOOTER */
+.footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+.ft-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em}
+.ft-item code{background:var(--panel);border:1px solid var(--border2);padding:2px 8px;border-radius:4px;color:var(--text2);font-size:9px}
+.ft-sep{color:var(--border2)}
+
+@media(max-width:640px){
+  .hero{grid-template-columns:1fr}
+  .hero-tags{flex-direction:row;align-items:flex-start;flex-wrap:wrap}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .nav-pill{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+<div class="lb" id="lb" onclick="lbClose()"><div class="lb-close" onclick="lbClose()">✕</div><img id="lb-img" src="" alt=""></div>
+<div class="toasts" id="toasts"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark"></div>
+    <div><div class="nav-logo-text">ORBIT</div><div class="nav-logo-sub">Intelligence Platform</div></div>
+  </a>
+  <div class="nav-div"></div>
+  <div class="nav-status"><div class="status-dot"></div>SYSTEM ONLINE</div>
+  <div class="nav-space"></div>
+  <div class="nav-pill">Scans: <strong id="nav-total">0</strong></div>
+  <div class="nav-pill" id="nav-hcw" style="display:none">High-conf: <strong id="nav-hc">0</strong></div>
+  <button class="nav-btn" id="nav-clr" style="display:none" onclick="clearAll()">⊘ RESET</button>
+</nav>
+
+<!-- ALERT (outside wrap for full width feel) -->
+<div style="max-width:1100px;margin:0 auto;padding:16px 24px 0;position:relative;z-index:1">
+  <div class="alert" id="alert">
+    <span class="alert-icon" id="al-icon"></span>
+    <div class="alert-body"><strong id="al-title"></strong><span id="al-sub"></span></div>
+    <button class="alert-close" onclick="alertHide()">✕</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">Satellite Intelligence / v2.4.1</div>
+      <div class="hero-title">ENVIRONMENTAL<br>HAZARD DETECTION</div>
+      <div class="hero-desc">Upload satellite imagery for real-time AI-powered classification of environmental conditions using deep convolutional analysis.</div>
+    </div>
+    <div class="hero-tags">
+      <div class="ctag ctag-fire">  <div class="ctag-dot"></div>WILDFIRE</div>
+      <div class="ctag ctag-flood"><div class="ctag-dot"></div>FLOODING</div>
+      <div class="ctag ctag-cloudy"><div class="ctag-dot"></div>CLOUD COVER</div>
+      <div class="ctag ctag-normal"><div class="ctag-dot"></div>NOMINAL</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-box"><div class="stat-icon">📡</div><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total Scans</div></div>
+    <div class="stat-box"><div class="stat-icon">⚠️</div><div class="stat-val" id="s-haz" style="color:#ff6680">0</div><div class="stat-lbl">Hazards Found</div></div>
+    <div class="stat-box"><div class="stat-icon">📊</div><div class="stat-val" id="s-avg">—</div><div class="stat-lbl">Avg. Confidence</div></div>
+    <div class="stat-box"><div class="stat-icon">🏷️</div><div class="stat-val" id="s-last" style="font-size:14px;padding-top:4px">—</div><div class="stat-lbl">Last Result</div></div>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="dz" id="dz">
+    <div class="dz-corner dz-tl"></div><div class="dz-corner dz-tr"></div>
+    <div class="dz-corner dz-bl"></div><div class="dz-corner dz-br"></div>
+    <div class="dz-inner">
+      <div class="dz-ring"><div class="dz-ring-icon">🛰️</div></div>
+      <div class="dz-title">Drop satellite image here or click to browse</div>
+      <div class="dz-sub">JPG · PNG · WEBP · TIFF — max 10 MB</div>
+      <div class="dz-kbd">Press <kbd>U</kbd> to open file picker</div>
+    </div>
+    <input type="file" id="fi" accept="image/*">
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid" id="mg">
+    <!-- LEFT -->
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="phdr-dots"><div class="phdr-dot"></div><div class="phdr-dot"></div><div class="phdr-dot"></div></div>
+        <div class="phdr-title"><span class="phdr-accent">IMG</span> · PREVIEW</div>
+      </div>
+      <div class="panel-body">
+        <div class="prev-area" id="pa">
+          <img id="pi" alt="Satellite image" onclick="lbOpen()">
+          <div class="prev-ph" id="pp">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            NO IMAGE LOADED
+          </div>
+          <div class="prev-ov" id="po">
+            <button class="pov-btn" onclick="lbOpen()" title="Fullscreen">⤢</button>
+            <button class="pov-btn" onclick="dlImg()" title="Download">↓</button>
+          </div>
+        </div>
+        <div class="hist-wrap" id="hw">
+          <div class="sec-lbl" style="margin-top:14px">Recent Scans</div>
+          <div class="hist-list" id="hl"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="phdr-dots"><div class="phdr-dot"></div><div class="phdr-dot"></div><div class="phdr-dot"></div></div>
+        <div class="phdr-title"><span class="phdr-accent">AI</span> · CLASSIFICATION OUTPUT</div>
+      </div>
+      <div class="panel-body">
+        <div class="spin-area" id="spin"><div class="spin-ring"></div><div class="spin-lbl">ANALYZING IMAGERY…</div></div>
+        <div id="ra">
+          <div class="empty">
+            <div class="empty-icon">📡</div>
+            <div class="empty-t">AWAITING INPUT</div>
+            <div class="empty-s">Upload a satellite image to begin classification</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="ft-item">🔌 Endpoint <code>/predict</code></div>
+    <div class="ft-sep">·</div>
+    <div class="ft-item">Returns <code>predicted_class</code> <code>confidence</code> <code>all_probabilities</code></div>
+    <div class="ft-sep">·</div>
+    <div class="ft-item">⌨ Press <kbd style="background:var(--panel);border:1px solid var(--border2);padding:1px 6px;border-radius:3px;font-size:9px">U</kbd> to upload</div>
+  </div>
+
+</div>
+
+<script>
+const dz=document.getElementById('dz'),fi=document.getElementById('fi'),mg=document.getElementById('mg');
+const pi=document.getElementById('pi'),pp=document.getElementById('pp'),po=document.getElementById('po');
+const spin=document.getElementById('spin'),ra=document.getElementById('ra');
+const hw=document.getElementById('hw'),hl=document.getElementById('hl');
+const lbEl=document.getElementById('lb'),lbImg=document.getElementById('lb-img');
+const alertEl=document.getElementById('alert'),statsRow=document.getElementById('stats-row');
+
+let history=[],stats={total:0,haz:0,sumConf:0,last:null},curRes=null,curUrl=null;
+
+const CM={
+  fire:  {rb:'rb-fire',  bf:'bf-fire',  dot:'#ff3355'},
+  floods:{rb:'rb-floods',bf:'bf-floods',dot:'#00d4ff'},
+  cloudy:{rb:'rb-cloudy',bf:'bf-cloudy',dot:'#8aa0c0'},
+  normal:{rb:'rb-normal',bf:'bf-normal',dot:'#00ff88'},
+};
+const DESC={
+  fire:  'Active wildfire or burn scar detected. High thermal signature visible in imagery. Immediate ground-truth verification recommended.',
+  floods:'Standing water or flood extent detected. Review drainage basins and vulnerable infrastructure. Emergency services may be needed.',
+  cloudy:'Dense cloud coverage present. Optical analysis confidence is reduced. Consider acquiring a cloud-free pass for accurate assessment.',
+  normal:'No anomalies detected. Vegetation index and land surface appear within nominal parameters. No immediate action required.',
+};
+
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0]){fi.files=e.dataTransfer.files;go()}});
+fi.addEventListener('change',go);
+document.addEventListener('keydown',e=>{
+  if((e.key==='u'||e.key==='U')&&document.activeElement.tagName!=='INPUT') fi.click();
+  if(e.key==='Escape') lbClose();
+});
+
+async function go(){
+  const file=fi.files[0];
+  if(!file) return;
+  if(file.size>10*1024*1024){toast('⚠ File too large (max 10 MB)','err');return}
+  const url=URL.createObjectURL(file);
+  curUrl=url;
+  mg.style.display='grid';
+  pi.src=url; pi.onload=()=>pi.classList.add('on');
+  pp.style.display='none'; po.classList.add('on');
+  spin.style.display='flex'; ra.innerHTML=''; alertHide();
+
+  const fd=new FormData(); fd.append('file',file);
+  try{
+    const res=await fetch('/predict',{method:'POST',body:fd});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    renderResult(await res.json(), file.name, url);
+  }catch(err){
+    spin.style.display='none';
+    ra.innerHTML=`<div class="err"><div style="font-size:22px;margin-bottom:10px">⚠</div>Cannot reach <code>/predict</code><br><span style="font-size:11px;color:var(--text3);margin-top:8px;display:block">${err.message}</span></div>`;
+    toast('✕ Backend unreachable','err');
+  }
+}
+
+function renderResult(data,fname,thumbUrl){
+  spin.style.display='none'; curRes={data,fname};
+  const cls=(data.predicted_class||'normal').toLowerCase(),conf=data.confidence||0;
+  const probs=data.all_probabilities||{},col=CM[cls]||CM.normal;
+  const pct=(conf*100).toFixed(1),ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const gcol=conf>=0.8?'#00ff88':conf>=0.5?'#ffaa00':'#ff3355';
+  if(cls==='fire') alertShow('fire','🔥 WILDFIRE DETECTED','High-confidence fire or burn scar — immediate review recommended');
+  else if(cls==='floods') alertShow('flood','💧 FLOOD ACTIVITY DETECTED','Standing water or flood extent identified');
+  else alertHide();
+  const bars=Object.entries(probs).map(([k,v])=>{const c=CM[k]||CM.normal;return`<div class="bar-row"><div class="bar-head"><span>${k.toUpperCase()}</span><span>${(v*100).toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill ${c.bf}" style="width:${(v*100).toFixed(1)}%"></div></div></div>`}).join('');
+  ra.innerHTML=`
+    <div class="rb ${col.rb}"><div class="rb-dot"></div><div class="rb-label">${cls.toUpperCase()}</div><div class="rb-conf">${pct}% CONF</div></div>
+    <div class="res-desc">${DESC[cls]||''}</div>
+    <div class="gauge-wrap">
+      <div class="gauge-head"><div class="gauge-name">Model Confidence</div><div class="gauge-num" style="color:${gcol}">${pct}%</div></div>
+      <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${gcol}"></div></div>
+      <div class="gauge-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    </div>
+    <div class="sec-lbl">Class Probabilities</div>
+    <div class="bars-wrap">${bars||'<div style="color:var(--text3);font-size:12px;padding:8px 0">No data returned</div>'}</div>
+    <div class="hr"></div>
+    <div class="sec-lbl">Scan Metadata</div>
+    <div class="meta-grid">
+      <div class="meta-cell"><div class="mc-lbl">Filename</div><div class="mc-val" title="${fname}">${fname}</div></div>
+      <div class="meta-cell"><div class="mc-lbl">Timestamp</div><div class="mc-val">${ts}</div></div>
+      <div class="meta-cell"><div class="mc-lbl">Classification</div><div class="mc-val">${cls.toUpperCase()}</div></div>
+      <div class="meta-cell"><div class="mc-lbl">Confidence</div><div class="mc-val">${pct}%</div></div>
+    </div>
+    <div class="act-row">
+      <button class="act-btn primary" onclick="exportJSON()">⬇ EXPORT JSON</button>
+      <button class="act-btn" onclick="copyReport()">⎘ COPY REPORT</button>
+      <button class="act-btn" onclick="fi.click()">↺ NEW SCAN</button>
+    </div>`;
+  stats.total++; if(cls==='fire'||cls==='floods') stats.haz++; stats.sumConf+=conf; stats.last=cls;
+  updateStats(); addHistory(cls,fname,thumbUrl,conf,ts,probs); toast('✓ Classification complete');
+}
+
+function alertShow(type,title,sub){
+  alertEl.className=`alert alert-${type}`; alertEl.style.display='flex';
+  document.getElementById('al-icon').textContent=type==='fire'?'🔥':'💧';
+  document.getElementById('al-title').textContent=title;
+  document.getElementById('al-sub').textContent=sub;
+}
+function alertHide(){alertEl.style.display='none'}
+
+function updateStats(){
+  statsRow.style.display='grid';
+  document.getElementById('nav-clr').style.display='flex';
+  document.getElementById('nav-hcw').style.display='flex';
+  document.getElementById('nav-total').textContent=stats.total;
+  document.getElementById('nav-hc').textContent=history.filter(h=>h.conf>=0.8).length;
+  document.getElementById('s-total').textContent=stats.total;
+  document.getElementById('s-haz').textContent=stats.haz;
+  document.getElementById('s-avg').textContent=((stats.sumConf/stats.total)*100).toFixed(0)+'%';
+  document.getElementById('s-last').textContent=stats.last?stats.last.toUpperCase():'—';
+}
+
+function addHistory(cls,fname,thumbUrl,conf,ts,probs){
+  history=history.filter(h=>h.fname!==fname);
+  history.unshift({cls,fname,thumbUrl,conf,ts,probs});
+  if(history.length>6) history.pop();
+  renderHistory();
+}
+function renderHistory(){
+  if(history.length<2) return;
+  hw.style.display='block';
+  hl.innerHTML=history.map((h,i)=>{const c=CM[h.cls]||CM.normal;return`<div class="hist-item" onclick="restoreHistory(${i})"><img class="hist-thumb" src="${h.thumbUrl}" alt=""><div class="hist-info"><div class="hist-name">${h.fname}</div><div class="hist-sub">${h.ts} · ${(h.conf*100).toFixed(1)}%</div></div><span class="hist-badge ${c.rb}" style="border-color:${c.dot}40;color:${c.dot}">${h.cls.toUpperCase()}</span></div>`}).join('');
+}
+function restoreHistory(i){
+  const h=history[i]; if(!h) return;
+  pi.src=h.thumbUrl; pi.classList.add('on'); pp.style.display='none'; po.classList.add('on');
+  curUrl=h.thumbUrl; mg.style.display='grid'; spin.style.display='none';
+  const cls=h.cls,conf=h.conf,probs=h.probs||{},col=CM[cls]||CM.normal;
+  const pct=(conf*100).toFixed(1),gcol=conf>=0.8?'#00ff88':conf>=0.5?'#ffaa00':'#ff3355';
+  if(cls==='fire') alertShow('fire','🔥 WILDFIRE DETECTED','Historical scan — fire signature present');
+  else if(cls==='floods') alertShow('flood','💧 FLOOD ACTIVITY DETECTED','Historical scan — flood extent identified');
+  else alertHide();
+  const bars=Object.entries(probs).map(([k,v])=>{const c=CM[k]||CM.normal;return`<div class="bar-row"><div class="bar-head"><span>${k.toUpperCase()}</span><span>${(v*100).toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill ${c.bf}" style="width:${(v*100).toFixed(1)}%"></div></div></div>`}).join('');
+  curRes={data:{predicted_class:cls,confidence:conf,all_probabilities:probs},fname:h.fname};
+  ra.innerHTML=`<div class="rb ${col.rb}"><div class="rb-dot"></div><div class="rb-label">${cls.toUpperCase()}</div><div class="rb-conf">${pct}% CONF</div></div>
+    <div class="res-desc">${DESC[cls]||''}</div>
+    <div class="gauge-wrap"><div class="gauge-head"><div class="gauge-name">Model Confidence</div><div class="gauge-num" style="color:${gcol}">${pct}%</div></div><div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${gcol}"></div></div><div class="gauge-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div></div>
+    <div class="sec-lbl">Class Probabilities</div><div class="bars-wrap">${bars}</div>
+    <div class="hr"></div><div class="sec-lbl">Scan Metadata</div>
+    <div class="meta-grid"><div class="meta-cell"><div class="mc-lbl">Filename</div><div class="mc-val">${h.fname}</div></div><div class="meta-cell"><div class="mc-lbl">Timestamp</div><div class="mc-val">${h.ts}</div></div><div class="meta-cell"><div class="mc-lbl">Classification</div><div class="mc-val">${cls.toUpperCase()}</div></div><div class="meta-cell"><div class="mc-lbl">Confidence</div><div class="mc-val">${pct}%</div></div></div>
+    <div class="act-row"><button class="act-btn primary" onclick="exportJSON()">⬇ EXPORT JSON</button><button class="act-btn" onclick="copyReport()">⎘ COPY REPORT</button><button class="act-btn" onclick="fi.click()">↺ NEW SCAN</button></div>`;
+}
+
+function lbOpen(){if(!curUrl) return; lbImg.src=curUrl; lbEl.classList.add('on')}
+function lbClose(){lbEl.classList.remove('on')}
+function dlImg(){if(!curUrl) return; const a=document.createElement('a');a.href=curUrl;a.download='orbit-satellite.jpg';a.click();toast('↓ Image saved')}
+function exportJSON(){
+  if(!curRes) return;
+  const blob=new Blob([JSON.stringify({...curRes.data,filename:curRes.fname,exported_at:new Date().toISOString(),platform:'ORBIT v2.4.1'},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-result-${Date.now()}.json`;a.click();toast('⬇ JSON exported');
+}
+function copyReport(){
+  if(!curRes) return;
+  const d=curRes.data,cls=(d.predicted_class||'normal').toUpperCase(),pct=((d.confidence||0)*100).toFixed(1);
+  const probs=Object.entries(d.all_probabilities||{}).map(([k,v])=>`  ${k.toUpperCase()}: ${(v*100).toFixed(1)}%`).join('\n');
+  navigator.clipboard.writeText(`ORBIT CLASSIFICATION REPORT\n${'─'.repeat(28)}\nFile      : ${curRes.fname}\nResult    : ${cls}\nConfidence: ${pct}%\nTimestamp : ${new Date().toLocaleString()}\n\nCLASS PROBABILITIES:\n${probs}\n\nPlatform  : ORBIT Satellite Intelligence v2.4.1`).then(()=>toast('⎘ Report copied'));
+}
+function clearAll(){
+  history=[];stats={total:0,haz:0,sumConf:0,last:null};curRes=null;curUrl=null;
+  hw.style.display='none';hl.innerHTML='';mg.style.display='none';statsRow.style.display='none';
+  document.getElementById('nav-clr').style.display='none';document.getElementById('nav-hcw').style.display='none';
+  document.getElementById('nav-total').textContent='0';alertHide();
+  pi.classList.remove('on');po.classList.remove('on');pp.style.display='flex';
+  ra.innerHTML='<div class="empty"><div class="empty-icon">📡</div><div class="empty-t">AWAITING INPUT</div><div class="empty-s">Upload a satellite image to begin classification</div></div>';
+  toast('⊘ Session cleared');
+}
+function toast(msg,type='ok'){
+  const tc=document.getElementById('toasts'),el=document.createElement('div');
+  el.className='toast';if(type==='err') el.style.borderColor='rgba(255,51,85,.3)';
+  el.textContent=msg;tc.appendChild(el);
+  setTimeout(()=>{el.style.transition='.3s';el.style.opacity='0';el.style.transform='translateX(12px)';setTimeout(()=>el.remove(),300)},3000);
+}
+
+/* STARS */
+(function(){
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  c.style.cssText='position:fixed;inset:0;z-index:0;pointer-events:none';
+  document.getElementById('starfield').appendChild(c);
+  let W,H,stars=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  window.addEventListener('resize',resize);resize();
+  for(let i=0;i<120;i++) stars.push({px:Math.random()*window.innerWidth,py:Math.random()*window.innerHeight,r:Math.random()*1.2+.2,a:Math.random(),sp:Math.random()*.003+.001});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.a+=s.sp;if(s.a>1){s.a=0;s.px=Math.random()*W;s.py=Math.random()*H}
+      ctx.beginPath();ctx.arc(s.px,s.py,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(180,220,255,${Math.sin(s.a*Math.PI)*.7})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
